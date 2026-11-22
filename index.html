@@ -1,0 +1,2253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Viva Random Student Picker</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono for crisp academic typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          animation: {
+            'pop-in': 'popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'pulse-fast': 'pulse 0.6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            popIn: {
+              '0%': { opacity: '0', transform: 'translateY(12px) scale(0.97)' },
+              '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom scrollbar & subtle utility refinements */
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    /* Smooth custom scrollbars for tables and history */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+  <!-- ===================================================================== -->
+  <!-- TOP NAVIGATION HEADER                                                 -->
+  <!-- ===================================================================== -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      <!-- Brand Identity -->
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0">
+          <!-- Academic / Random Shuffle Icon -->
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
+          </svg>
+        </div>
+        <div class="truncate">
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 tracking-tight truncate">
+            Viva Random Student Picker
+          </h1>
+          <p class="text-xs text-slate-500 hidden sm:block">
+            Batch-wise examiner selection tool • Fair &amp; auditable draws
+          </p>
+        </div>
+      </div>
+
+      <!-- Global Header Actions -->
+      <div class="flex items-center gap-2 shrink-0">
+        <!-- Sound Chime Toggle -->
+        <button
+          id="btnToggleSound"
+          type="button"
+          onclick="toggleSound()"
+          title="Toggle selection chime"
+          class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition"
+        >
+          <span id="soundIconContainer"></span>
+          <span class="hidden md:inline" id="soundLabel">Sound: On</span>
+        </button>
+
+        <!-- Projector Focus Mode Button -->
+        <button
+          id="btnProjectorMode"
+          type="button"
+          onclick="openProjectorMode()"
+          class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+          <span class="hidden sm:inline">Projector View</span>
+        </button>
+
+        <!-- Clear All Data Button -->
+        <button
+          id="btnClearAll"
+          type="button"
+          onclick="promptClearAllData()"
+          class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span>Clear All Data</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- LIVE SESSION STATS BAR                                                -->
+  <!-- ===================================================================== -->
+  <section class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- Stat 1: Total Roster -->
+        <div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total Students</p>
+            <p id="statTotalStudents" class="text-xl font-extrabold text-slate-900 tabular-nums mt-0.5">0</p>
+          </div>
+          <div class="w-9 h-9 rounded-lg bg-slate-200/70 text-slate-600 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Stat 2: Active Batch Pool Size -->
+        <div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-indigo-50/60 border border-indigo-200/70">
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-indigo-600 truncate" id="statBatchLabel">Selected Pool (All)</p>
+            <p id="statPoolSize" class="text-xl font-extrabold text-indigo-950 tabular-nums mt-0.5">0</p>
+          </div>
+          <div class="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Stat 3: Remaining Uncalled -->
+        <div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">Remaining Uncalled</p>
+            <p id="statRemaining" class="text-xl font-extrabold text-emerald-950 tabular-nums mt-0.5">0</p>
+          </div>
+          <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Stat 4: Already Called -->
+        <div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80">
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-700">Already Called</p>
+            <p id="statCalled" class="text-xl font-extrabold text-amber-950 tabular-nums mt-0.5">0</p>
+          </div>
+          <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- MAIN WORKSPACE GRID                                                   -->
+  <!-- ===================================================================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- TOP ROW: VIVA SELECTION CONTROLS (LEFT) + SPOTLIGHT STAGE (RIGHT) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- LEFT COLUMN (5 cols): RANDOM VIVA SELECTION CONTROLS -->
+      <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3.5">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Viva Selection Controls</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Configure batch, replacement rule, and count</p>
+          </div>
+          <span id="drawCounterBadge" class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold tabular-nums">
+            Draws: 0
+          </span>
+        </div>
+
+        <!-- 1. BATCH SELECTION (BATCH-WISE) -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="batchSelectDropdown" class="text-xs font-bold uppercase tracking-wider text-slate-600">
+              1. Batch Filter (Batch-wise)
+            </label>
+            <span id="batchCountInfo" class="text-xs font-medium text-indigo-600 tabular-nums">0 batches</span>
+          </div>
+
+          <!-- Dropdown for quick selection on any screen size -->
+          <select
+            id="batchSelectDropdown"
+            onchange="handleBatchChange(this.value)"
+            class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+          >
+            <option value="ALL">All Batches (0 remaining / 0 total)</option>
+          </select>
+
+          <!-- Interactive Batch Pills for 1-click switching -->
+          <div id="batchPillsContainer" class="flex flex-wrap gap-1.5 pt-1">
+            <!-- Populated dynamically from loaded students -->
+          </div>
+        </div>
+
+        <!-- 2. SELECTION MODE (WITHOUT REPLACEMENT VS WITH REPLACEMENT) -->
+        <div class="space-y-2">
+          <label class="text-xs font-bold uppercase tracking-wider text-slate-600 block">
+            2. Selection Mode
+          </label>
+          <div class="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-100 border border-slate-200/80" role="group" aria-label="Selection Mode">
+            <button
+              type="button"
+              id="btnModeWithout"
+              onclick="setSelectionMode('without')"
+              class="py-2.5 px-3 rounded-lg text-xs font-bold transition flex flex-col items-center justify-center text-center bg-white text-indigo-700 shadow-sm border border-slate-200/80"
+            >
+              <span>Without Replacement</span>
+              <span class="text-[10px] font-normal text-slate-500 mt-0.5">No repeat calls</span>
+            </button>
+            <button
+              type="button"
+              id="btnModeWith"
+              onclick="setSelectionMode('with')"
+              class="py-2.5 px-3 rounded-lg text-xs font-bold transition flex flex-col items-center justify-center text-center text-slate-600 hover:text-slate-900"
+            >
+              <span>With Replacement</span>
+              <span class="text-[10px] font-normal text-slate-400 mt-0.5">Can be picked again</span>
+            </button>
+          </div>
+          <p id="modeHelperText" class="text-xs text-slate-500 leading-relaxed">
+            Selected students are marked <strong class="text-slate-700">Called</strong> and excluded from subsequent draws until reset.
+          </p>
+        </div>
+
+        <!-- 3. NUMBER OF STUDENTS TO PICK (n) -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="pickCountInput" class="text-xs font-bold uppercase tracking-wider text-slate-600">
+              3. Students to Pick (n)
+            </label>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="setPickCount(1)" class="quick-n-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition">1</button>
+              <button type="button" onclick="setPickCount(2)" class="quick-n-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition">2</button>
+              <button type="button" onclick="setPickCount(3)" class="quick-n-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition">3</button>
+              <button type="button" onclick="setPickCount(5)" class="quick-n-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition">5</button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              onclick="adjustPickCount(-1)"
+              aria-label="Decrease count"
+              class="w-11 h-11 rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-lg flex items-center justify-center transition shrink-0"
+            >
+              −
+            </button>
+            <input
+              id="pickCountInput"
+              type="number"
+              min="1"
+              max="500"
+              value="1"
+              oninput="validatePickCountInput(this)"
+              class="w-full h-11 rounded-xl border border-slate-300 bg-white px-4 text-center text-base font-extrabold text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            <button
+              type="button"
+              onclick="adjustPickCount(1)"
+              aria-label="Increase count"
+              class="w-11 h-11 rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-lg flex items-center justify-center transition shrink-0"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. PRIMARY PICK BUTTON -->
+        <div class="pt-1">
+          <button
+            id="btnPickStudents"
+            type="button"
+            onclick="triggerVivaDraw()"
+            class="w-full py-4 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-base shadow-md shadow-indigo-600/20 transition flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg id="pickBtnIcon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span id="pickBtnText">Pick Random Student(s) for Viva</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN (7 cols): VIVA SPOTLIGHT DISPLAY -->
+      <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 flex flex-col min-h-[380px]">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3.5 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+            <h2 class="text-base font-bold text-slate-900">Viva Spotlight</h2>
+            <span id="spotlightMetaBadge" class="hidden px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/70"></span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              id="btnCopyAllDrawn"
+              type="button"
+              onclick="copyAllCurrentDrawn()"
+              class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span>Copy All</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Spotlight Content Area -->
+        <div id="spotlightContainer" class="flex-1 flex flex-col justify-center">
+          <!-- Default Empty / Ready State -->
+          <div class="text-center py-10 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/60">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 mx-auto flex items-center justify-center mb-3">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <h3 class="text-base font-bold text-slate-800" id="spotlightEmptyTitle">No Students Loaded Yet</h3>
+            <p class="text-sm text-slate-500 max-w-md mx-auto mt-1" id="spotlightEmptySubtitle">
+              Paste your student roster in the section below (S.No., Batch, Registration No., Name) to start picking candidates for Viva.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- BOTTOM SECTION: TABS FOR IMPORT/ROSTER INPUT, ROSTER TABLE & HISTORY  -->
+    <!-- ===================================================================== -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <!-- Navigation Tabs Header -->
+      <div class="border-b border-slate-200 bg-slate-50/70 px-4 sm:px-6 pt-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-1 sm:gap-2 overflow-x-auto" role="tablist">
+          <!-- Tab 1: Import / Add Students -->
+          <button
+            type="button"
+            role="tab"
+            id="tabBtnInput"
+            onclick="switchMainTab('input')"
+            class="px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-xl border-b-2 border-indigo-600 text-indigo-700 bg-white transition whitespace-nowrap flex items-center gap-2"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Enter / Import Students</span>
+          </button>
+
+          <!-- Tab 2: Student Roster -->
+          <button
+            type="button"
+            role="tab"
+            id="tabBtnRoster"
+            onclick="switchMainTab('roster')"
+            class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-xl border-b-2 border-transparent text-slate-600 hover:text-slate-900 transition whitespace-nowrap flex items-center gap-2"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            <span>Student Roster</span>
+            <span id="tabRosterBadge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200 text-slate-700 tabular-nums">0</span>
+          </button>
+
+          <!-- Tab 3: Call History -->
+          <button
+            type="button"
+            role="tab"
+            id="tabBtnHistory"
+            onclick="switchMainTab('history')"
+            class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-xl border-b-2 border-transparent text-slate-600 hover:text-slate-900 transition whitespace-nowrap flex items-center gap-2"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Call History</span>
+            <span id="tabHistoryBadge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200 text-slate-700 tabular-nums">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- TAB PANEL 1: ENTER / IMPORT STUDENT DATA (COMPLETELY CLEAR INIT)  -->
+      <!-- ================================================================= -->
+      <div id="panelInput" class="p-5 sm:p-6 space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Left 8 cols: Bulk Paste Area -->
+          <div class="lg:col-span-8 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <label for="bulkPasteTextarea" class="text-sm font-bold text-slate-900 block">
+                  Paste Student List (Excel, Google Sheets, CSV, or Text)
+                </label>
+                <p class="text-xs text-slate-500">
+                  Columns supported: <span class="font-mono text-slate-700">S.No. | Batch | Registration No. | Name</span> (headers &amp; blank lines are skipped automatically)
+                </p>
+              </div>
+
+              <!-- Upload File (.csv / .txt) -->
+              <div class="flex items-center gap-2">
+                <input
+                  type="file"
+                  id="rosterFileInput"
+                  accept=".csv,.txt,.tsv"
+                  onchange="handleFileUpload(event)"
+                  class="hidden"
+                />
+                <button
+                  type="button"
+                  onclick="document.getElementById('rosterFileInput').click()"
+                  class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition"
+                >
+                  <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  <span>Upload .CSV / .TXT</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Completely Empty Textarea on Initial Load with Generic Placeholder Only -->
+            <textarea
+              id="bulkPasteTextarea"
+              rows="8"
+              value=""
+              placeholder="Paste directly from Excel/Google Sheets:
+S.No.   Batch   Registration No.   Name"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50/40 focus:bg-white p-3.5 text-sm font-mono text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            ></textarea>
+
+            <!-- Action Bar for Bulk Loading -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <div class="flex items-center gap-4 text-xs text-slate-600">
+                <label class="inline-flex items-center gap-1.5 cursor-pointer font-medium">
+                  <input type="radio" name="importMode" value="replace" checked class="text-indigo-600 focus:ring-indigo-500" />
+                  <span>Replace existing roster</span>
+                </label>
+                <label class="inline-flex items-center gap-1.5 cursor-pointer font-medium">
+                  <input type="radio" name="importMode" value="append" class="text-indigo-600 focus:ring-indigo-500" />
+                  <span>Append / Merge to roster</span>
+                </label>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  onclick="clearTextareaOnly()"
+                  class="px-3.5 py-2.5 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition"
+                >
+                  Clear Input Box
+                </button>
+                <button
+                  type="button"
+                  onclick="processBulkImport()"
+                  class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition inline-flex items-center gap-2"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Load / Update Roster</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right 4 cols: Add Individual Student Manually -->
+          <div class="lg:col-span-4 bg-slate-50/80 rounded-2xl border border-slate-200/90 p-4 sm:p-5 flex flex-col justify-between">
+            <div class="space-y-3.5">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">Add Individual Student</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Quickly insert a single entry into the active roster</p>
+              </div>
+
+              <form id="singleStudentForm" onsubmit="handleAddSingleStudent(event)" class="space-y-3">
+                <div class="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label for="inputSingleSno" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+                      S.No.
+                    </label>
+                    <input
+                      id="inputSingleSno"
+                      type="text"
+                      value=""
+                      placeholder="e.g. 1"
+                      class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-mono text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label for="inputSingleBatch" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+                      Batch
+                    </label>
+                    <input
+                      id="inputSingleBatch"
+                      type="text"
+                      value=""
+                      placeholder="e.g. B1"
+                      class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-mono text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="inputSingleRegNo" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+                    Registration / Roll No.
+                  </label>
+                  <input
+                    id="inputSingleRegNo"
+                    type="text"
+                    value=""
+                    placeholder="e.g. REG001"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-mono text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label for="inputSingleName" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+                    Student Name <span class="text-rose-500">*</span>
+                  </label>
+                  <input
+                    id="inputSingleName"
+                    type="text"
+                    required
+                    value=""
+                    placeholder="Enter full name"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  class="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 mt-1"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Add Student to Roster</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- TAB PANEL 2: SEARCHABLE & FILTERABLE STUDENT ROSTER TABLE         -->
+      <!-- ================================================================= -->
+      <div id="panelRoster" class="hidden p-5 sm:p-6 space-y-4">
+        <!-- Toolbar: Search, Batch Filter, Status Filter, Reset Called -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2.5 flex-1">
+            <!-- Search Input -->
+            <div class="relative flex-1 min-w-[200px] max-w-sm">
+              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                id="rosterSearchInput"
+                type="text"
+                value=""
+                oninput="renderRosterTable()"
+                placeholder="Search name, reg no., batch..."
+                class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <!-- Roster Batch Filter -->
+            <select
+              id="rosterBatchFilter"
+              onchange="renderRosterTable()"
+              class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="ALL">All Batches</option>
+            </select>
+
+            <!-- Roster Status Filter -->
+            <select
+              id="rosterStatusFilter"
+              onchange="renderRosterTable()"
+              class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="remaining">Remaining Only</option>
+              <option value="called">Called Only</option>
+            </select>
+          </div>
+
+          <!-- Reset Called Status Button -->
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              onclick="promptResetCalledStatus()"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Reset Called Status</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Responsive Table Wrapper -->
+        <div class="overflow-x-auto border border-slate-200 rounded-xl">
+          <table class="min-w-full divide-y divide-slate-200 text-left">
+            <thead class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <tr>
+                <th scope="col" class="px-4 py-3 w-20">S.No.</th>
+                <th scope="col" class="px-4 py-3 w-28">Batch</th>
+                <th scope="col" class="px-4 py-3 w-44">Registration No.</th>
+                <th scope="col" class="px-4 py-3">Student Name</th>
+                <th scope="col" class="px-4 py-3 w-36">Status</th>
+                <th scope="col" class="px-4 py-3 w-28 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="rosterTableBody" class="divide-y divide-slate-100 bg-white text-sm">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- TAB PANEL 3: CHRONOLOGICAL CALL HISTORY & CSV EXPORT              -->
+      <!-- ================================================================= -->
+      <div id="panelHistory" class="hidden p-5 sm:p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Viva Call Log</h3>
+            <p class="text-xs text-slate-500">Chronological record of all student draws in this session</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              onclick="exportHistoryToCSV()"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span>Export Viva Log (CSV)</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="historyListContainer" class="space-y-3">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- PROJECTOR / CLASSROOM FULLSCREEN SPOTLIGHT OVERLAY                    -->
+  <!-- ===================================================================== -->
+  <div id="projectorOverlay" class="fixed inset-0 z-50 bg-slate-950 text-white hidden flex-col">
+    <!-- Top Projector Bar -->
+    <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="px-3 py-1 rounded-lg bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider">
+          Viva Spotlight
+        </span>
+        <span id="projectorBatchTag" class="text-sm font-semibold text-slate-300">All Batches</span>
+        <span class="text-slate-600">•</span>
+        <span id="projectorRemainingTag" class="text-sm font-medium text-emerald-400 tabular-nums">0 Remaining</span>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          onclick="triggerVivaDraw(true)"
+          class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg transition inline-flex items-center gap-2"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
+          </svg>
+          <span>Pick Next Student(s)</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="closeProjectorMode()"
+          class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition"
+        >
+          Exit Projector
+        </button>
+      </div>
+    </div>
+
+    <!-- Center Projector Cards Area -->
+    <div id="projectorContentArea" class="flex-1 overflow-y-auto p-6 sm:p-10 flex items-center justify-center">
+      <!-- Populated dynamically -->
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- CUSTOM ACCESSIBLE MODAL DIALOG (NO alert() OR confirm())              -->
+  <!-- ===================================================================== -->
+  <div id="customModalBackdrop" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 animate-pop-in" role="dialog" aria-modal="true">
+      <div class="flex items-start gap-3.5">
+        <div id="modalIconWrapper" class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+          <!-- Icon injected via JS -->
+        </div>
+        <div class="space-y-1 flex-1">
+          <h3 id="modalTitle" class="text-base font-bold text-slate-900">Confirm Action</h3>
+          <p id="modalMessage" class="text-sm text-slate-600 leading-relaxed"></p>
+        </div>
+      </div>
+
+      <!-- Optional Secondary Action Slot (e.g., Reset Active Batch vs Reset All Batches) -->
+      <div id="modalExtraOptions" class="hidden pt-1"></div>
+
+      <div id="modalButtonsRow" class="flex items-center justify-end gap-2.5 pt-2">
+        <!-- Buttons injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- TOAST NOTIFICATION CONTAINER                                          -->
+  <!-- ===================================================================== -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- ===================================================================== -->
+  <!-- APPLICATION LOGIC (STATE, PARSER, RANDOMIZER, UI & STORAGE)           -->
+  <!-- ===================================================================== -->
+  <script>
+    /**
+     * Storage key used for persisting session progress across accidental refreshes.
+     * On first-time load (when key does not exist), application state starts 100% empty.
+     */
+    const STORAGE_KEY = 'viva_random_picker_session_v1';
+
+    /**
+     * Central application state
+     */
+    let appState = {
+      students: [],          // Array of { id, sno, batch, regNo, name, status: 'remaining'|'called', callCount: 0 }
+      selectedBatch: 'ALL',  // 'ALL' or specific batch name
+      selectionMode: 'without', // 'without' | 'with'
+      pickCount: 1,
+      lastDraw: null,        // { drawNumber, timestamp, batchFilter, mode, students: [ { ...studentSnapshot, returned: false } ] }
+      history: [],           // Array of draw records (newest first)
+      soundEnabled: true,
+      activeTab: 'input'     // 'input' | 'roster' | 'history'
+    };
+
+    let isAnimatingDraw = false;
+
+    /* =====================================================================
+     * 1. INITIALIZATION & LOCAL STORAGE PERSISTENCE
+     * ===================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      // Ensure all input fields start completely empty on load
+      document.getElementById('bulkPasteTextarea').value = '';
+      document.getElementById('inputSingleSno').value = '';
+      document.getElementById('inputSingleBatch').value = '';
+      document.getElementById('inputSingleRegNo').value = '';
+      document.getElementById('inputSingleName').value = '';
+      document.getElementById('rosterSearchInput').value = '';
+
+      loadStateFromStorage();
+
+      // If students already exist from a saved session, default to Roster or keep activeTab sensible
+      if (appState.students.length > 0 && appState.activeTab === 'input') {
+        appState.activeTab = 'roster';
+      }
+
+      renderAll();
+    });
+
+    function saveStateToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (err) {
+        console.warn('Could not save session to localStorage:', err);
+      }
+    }
+
+    function loadStateFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.students)) {
+          appState = {
+            ...appState,
+            ...parsed
+          };
+        }
+      } catch (err) {
+        console.warn('Could not restore session from localStorage:', err);
+      }
+    }
+
+    /* =====================================================================
+     * 2. SMART STUDENT ROSTER PARSER (EXCEL / SHEETS / CSV / TSV / TEXT)
+     * ===================================================================== */
+    function generateUniqueId() {
+      return 'stu_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 8);
+    }
+
+    /**
+     * Checks whether a row of cells is a table header row (e.g., S.No., Batch, Roll No., Name)
+     */
+    function isHeaderRow(cells) {
+      if (!cells || cells.length === 0) return true;
+      const joined = cells.join(' ').toLowerCase().replace(/[.:_-]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!joined) return true;
+
+      const firstCol = (cells[0] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const headerFirstTokens = ['sno', 'srno', 'serial', 'serialno', 'no', 'id', 'slno'];
+      const containsHeaderKeyword = /\b(batch|roll|reg|registration|student|name)\b/i.test(joined);
+
+      if (headerFirstTokens.includes(firstCol) && containsHeaderKeyword) {
+        return true;
+      }
+      if (/^(s\s*no|sr\s*no|serial\s*no)\b/i.test(joined)) {
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * Parses raw text pasted from Excel, Google Sheets, CSV, or plain text into student objects.
+     */
+    function parseStudentLines(rawText, startingIndex = 1) {
+      const lines = rawText.split(/\r?\n/);
+      const parsedStudents = [];
+      let autoCounter = startingIndex;
+
+      for (let i = 0; i < lines.length; i++) {
+        const rawLine = lines[i];
+        if (!rawLine || !rawLine.trim()) continue; // Skip empty or tab-only lines
+
+        let cells = [];
+
+        if (rawLine.includes('\t')) {
+          // Tab-separated (standard Excel / Google Sheets copy-paste)
+          cells = rawLine.split('\t').map(c => c.trim());
+          // Remove leading/trailing empty cells caused by outer column selection
+          while (cells.length > 0 && cells[0] === '') cells.shift();
+          while (cells.length > 0 && cells[cells.length - 1] === '') cells.pop();
+        } else if (rawLine.includes(',')) {
+          // Comma-separated (CSV) - handle optional double quotes
+          cells = parseCsvRow(rawLine);
+        } else if (rawLine.includes(';') || rawLine.includes('|')) {
+          const delim = rawLine.includes(';') ? ';' : '|';
+          cells = rawLine.split(delim).map(c => c.trim()).filter(Boolean);
+        } else if (/\s{2,}/.test(rawLine.trim())) {
+          // Multiple spaces separating columns
+          cells = rawLine.trim().split(/\s{2,}/).map(c => c.trim()).filter(Boolean);
+        } else {
+          // Single-space separated fallback
+          const tokens = rawLine.trim().split(/\s+/);
+          if (tokens.length >= 4 && /^\d+\.?$/.test(tokens[0])) {
+            cells = [
+              tokens[0].replace(/\.$/, ''),
+              tokens[1],
+              tokens[2],
+              tokens.slice(3).join(' ')
+            ];
+          } else if (tokens.length === 3 && /^\d+\.?$/.test(tokens[0])) {
+            cells = [
+              tokens[0].replace(/\.$/, ''),
+              'General',
+              tokens[1],
+              tokens[2]
+            ];
+          } else {
+            cells = [String(autoCounter), 'General', '-', rawLine.trim()];
+          }
+        }
+
+        if (cells.length === 0) continue;
+        if (isHeaderRow(cells)) continue;
+
+        let sno = '';
+        let batch = '';
+        let regNo = '';
+        let name = '';
+
+        if (cells.length >= 4) {
+          sno = cells[0] || String(autoCounter);
+          batch = cells[1] || 'General';
+          regNo = cells[2] || '-';
+          name = cells.slice(3).join(' ').trim();
+        } else if (cells.length === 3) {
+          // Assume S.No. | RegNo | Name (no batch provided)
+          sno = cells[0] || String(autoCounter);
+          batch = 'General';
+          regNo = cells[1] || '-';
+          name = cells[2].trim();
+        } else if (cells.length === 2) {
+          // Assume RegNo | Name or S.No. | Name
+          if (/^\d+\.?$/.test(cells[0])) {
+            sno = cells[0].replace(/\.$/, '');
+            batch = 'General';
+            regNo = '-';
+            name = cells[1].trim();
+          } else {
+            sno = String(autoCounter);
+            batch = 'General';
+            regNo = cells[0];
+            name = cells[1].trim();
+          }
+        } else {
+          sno = String(autoCounter);
+          batch = 'General';
+          regNo = '-';
+          name = cells[0].trim();
+        }
+
+        // Skip row if name is completely missing
+        if (!name) continue;
+
+        parsedStudents.push({
+          id: generateUniqueId(),
+          sno: sno,
+          batch: batch.toUpperCase(),
+          regNo: regNo,
+          name: name,
+          status: 'remaining',
+          callCount: 0
+        });
+
+        autoCounter++;
+      }
+
+      return parsedStudents;
+    }
+
+    function parseCsvRow(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+
+    /**
+     * Handles clicking "Load / Update Roster" from the bulk paste textarea
+     */
+    function processBulkImport() {
+      const textarea = document.getElementById('bulkPasteTextarea');
+      const rawText = textarea.value;
+
+      if (!rawText.trim()) {
+        showToast('Please paste student data or upload a CSV/TXT file first.', 'warning');
+        textarea.focus();
+        return;
+      }
+
+      const importMode = document.querySelector('input[name="importMode"]:checked')?.value || 'replace';
+      const startIndex = importMode === 'append' ? appState.students.length + 1 : 1;
+      const newStudents = parseStudentLines(rawText, startIndex);
+
+      if (newStudents.length === 0) {
+        showToast('No valid student rows detected. Check format: S.No. | Batch | Registration No. | Name', 'error');
+        return;
+      }
+
+      if (importMode === 'replace') {
+        appState.students = newStudents;
+        appState.selectedBatch = 'ALL';
+        appState.lastDraw = null;
+        appState.history = [];
+        showToast(`Loaded ${newStudents.length} student(s) into the roster.`, 'success');
+      } else {
+        // Merge/Append: avoid duplicate registration numbers if valid regNo exists
+        const existingRegNos = new Set(
+          appState.students
+            .map(s => s.regNo.toLowerCase())
+            .filter(r => r && r !== '-')
+        );
+
+        let addedCount = 0;
+        let skippedDuplicates = 0;
+
+        newStudents.forEach(stu => {
+          const normReg = stu.regNo.toLowerCase();
+          if (normReg !== '-' && existingRegNos.has(normReg)) {
+            skippedDuplicates++;
+          } else {
+            appState.students.push(stu);
+            if (normReg !== '-') existingRegNos.add(normReg);
+            addedCount++;
+          }
+        });
+
+        const dupMsg = skippedDuplicates > 0 ? ` (${skippedDuplicates} duplicate Reg No. skipped)` : '';
+        showToast(`Appended ${addedCount} student(s)${dupMsg}.`, 'success');
+      }
+
+      // Clear textarea after successful load so input remains tidy
+      textarea.value = '';
+      appState.activeTab = 'roster';
+      saveStateToStorage();
+      renderAll();
+    }
+
+    function clearTextareaOnly() {
+      document.getElementById('bulkPasteTextarea').value = '';
+      document.getElementById('bulkPasteTextarea').focus();
+    }
+
+    /**
+     * Handles CSV / TXT file upload into the textarea and automatically loads
+     */
+    function handleFileUpload(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const content = e.target?.result || '';
+        document.getElementById('bulkPasteTextarea').value = content;
+        showToast(`File "${file.name}" loaded into input box. Click "Load / Update Roster" to import.`, 'info');
+        event.target.value = ''; // Reset input so same file can be re-selected if needed
+      };
+      reader.onerror = function () {
+        showToast('Unable to read the selected file.', 'error');
+      };
+      reader.readAsText(file);
+    }
+
+    /**
+     * Handles adding a single student via the 4-field manual form
+     */
+    function handleAddSingleStudent(event) {
+      event.preventDefault();
+      const snoInput = document.getElementById('inputSingleSno');
+      const batchInput = document.getElementById('inputSingleBatch');
+      const regNoInput = document.getElementById('inputSingleRegNo');
+      const nameInput = document.getElementById('inputSingleName');
+
+      const name = nameInput.value.trim();
+      if (!name) {
+        showToast('Please enter the student name.', 'warning');
+        nameInput.focus();
+        return;
+      }
+
+      const sno = snoInput.value.trim() || String(appState.students.length + 1);
+      const batch = (batchInput.value.trim() || 'General').toUpperCase();
+      const regNo = regNoInput.value.trim() || '-';
+
+      appState.students.push({
+        id: generateUniqueId(),
+        sno,
+        batch,
+        regNo,
+        name,
+        status: 'remaining',
+        callCount: 0
+      });
+
+      // Clear all 4 inputs immediately
+      snoInput.value = '';
+      batchInput.value = '';
+      regNoInput.value = '';
+      nameInput.value = '';
+      nameInput.focus();
+
+      saveStateToStorage();
+      renderAll();
+      showToast(`Added ${name} (${batch}) to roster.`, 'success');
+    }
+
+    /* =====================================================================
+     * 3. CRYPTOGRAPHIC RANDOM ENGINE & VIVA SELECTION LOGIC
+     * ===================================================================== */
+    function getSecureRandomInt(maxExclusive) {
+      if (maxExclusive <= 1) return 0;
+      if (window.crypto && window.crypto.getRandomValues) {
+        const array = new Uint32Array(1);
+        const maxUint = 0xffffffff;
+        const limit = maxUint - (maxUint % maxExclusive);
+        let rand;
+        do {
+          window.crypto.getRandomValues(array);
+          rand = array[0];
+        } while (rand >= limit);
+        return rand % maxExclusive;
+      }
+      return Math.floor(Math.random() * maxExclusive);
+    }
+
+    /**
+     * Unbiased Fisher-Yates shuffle returning a new shuffled array
+     */
+    function fisherYatesSample(array, count) {
+      const copy = [...array];
+      const n = Math.min(count, copy.length);
+      for (let i = 0; i < n; i++) {
+        const j = i + getSecureRandomInt(copy.length - i);
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy.slice(0, n);
+    }
+
+    function getEligiblePool(batchFilter = appState.selectedBatch, mode = appState.selectionMode) {
+      const batchFiltered = batchFilter === 'ALL'
+        ? appState.students
+        : appState.students.filter(s => s.batch === batchFilter);
+
+      if (mode === 'without') {
+        return batchFiltered.filter(s => s.status === 'remaining');
+      }
+      return batchFiltered;
+    }
+
+    /**
+     * Main entry point when user clicks "Pick Random Student(s) for Viva"
+     */
+    function triggerVivaDraw(fromProjector = false) {
+      if (isAnimatingDraw) return;
+
+      if (appState.students.length === 0) {
+        showToast('Roster is empty. Please load students first.', 'warning');
+        switchMainTab('input');
+        return;
+      }
+
+      const pool = getEligiblePool();
+      const batchLabel = appState.selectedBatch === 'ALL' ? 'All Batches' : `Batch ${appState.selectedBatch}`;
+
+      if (pool.length === 0) {
+        if (appState.selectionMode === 'without') {
+          showCustomModal({
+            title: `All Students Called in ${batchLabel}`,
+            message: `Every student in ${batchLabel} has already been called in "Without Replacement" mode. Would you like to reset their status so they can be picked again?`,
+            type: 'warning',
+            buttons: [
+              { label: 'Cancel', variant: 'secondary' },
+              {
+                label: `Reset ${batchLabel} Pool`,
+                variant: 'primary',
+                onClick: () => {
+                  resetCalledForBatch(appState.selectedBatch);
+                }
+              }
+            ]
+          });
+        } else {
+          showToast(`No students found in ${batchLabel}.`, 'warning');
+        }
+        return;
+      }
+
+      let requestedN = parseInt(document.getElementById('pickCountInput').value, 10);
+      if (isNaN(requestedN) || requestedN < 1) {
+        requestedN = 1;
+        document.getElementById('pickCountInput').value = '1';
+      }
+
+      // In Without Replacement mode, check if n > remaining pool size
+      if (appState.selectionMode === 'without' && requestedN > pool.length) {
+        showCustomModal({
+          title: 'Fewer Uncalled Students Remaining',
+          message: `You requested ${requestedN} student(s), but only ${pool.length} uncalled student(s) remain in ${batchLabel}. Would you like to pick all ${pool.length} remaining student(s)?`,
+          type: 'info',
+          buttons: [
+            { label: 'Cancel', variant: 'secondary' },
+            {
+              label: `Pick Remaining (${pool.length})`,
+              variant: 'primary',
+              onClick: () => {
+                executeDrawWithAnimation(pool, pool.length, fromProjector);
+              }
+            }
+          ]
+        });
+        return;
+      }
+
+      executeDrawWithAnimation(pool, requestedN, fromProjector);
+    }
+
+    /**
+     * Performs a brief shuffle preview before locking in the final random draw
+     */
+    function executeDrawWithAnimation(pool, count, fromProjector) {
+      isAnimatingDraw = true;
+      const btn = document.getElementById('btnPickStudents');
+      const btnText = document.getElementById('pickBtnText');
+      btn.disabled = true;
+      btnText.textContent = 'Shuffling...';
+
+      const spotlightContainer = document.getElementById('spotlightContainer');
+      const projectorArea = document.getElementById('projectorContentArea');
+
+      let ticks = 0;
+      const totalTicks = 8;
+      const interval = setInterval(() => {
+        ticks++;
+        // Render quick preview cards during shuffle
+        const previewSelection = [];
+        for (let i = 0; i < Math.min(count, 6); i++) {
+          previewSelection.push(pool[getSecureRandomInt(pool.length)]);
+        }
+        spotlightContainer.innerHTML = buildShufflePreviewHTML(previewSelection);
+        if (fromProjector || !document.getElementById('projectorOverlay').classList.contains('hidden')) {
+          projectorArea.innerHTML = buildProjectorShuffleHTML(previewSelection);
+        }
+
+        if (ticks >= totalTicks) {
+          clearInterval(interval);
+          finalizeDraw(pool, count);
+          btn.disabled = false;
+          btnText.textContent = 'Pick Random Student(s) for Viva';
+          isAnimatingDraw = false;
+        }
+      }, 65);
+    }
+
+    function finalizeDraw(pool, count) {
+      let pickedStudents = [];
+
+      if (appState.selectionMode === 'without') {
+        pickedStudents = fisherYatesSample(pool, count);
+      } else {
+        // With replacement: each slot is drawn independently from full batch pool
+        for (let i = 0; i < count; i++) {
+          pickedStudents.push(pool[getSecureRandomInt(pool.length)]);
+        }
+      }
+
+      const drawNumber = appState.history.length + 1;
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const batchFilter = appState.selectedBatch;
+      const mode = appState.selectionMode;
+
+      // Update student records in master roster
+      pickedStudents.forEach(picked => {
+        const masterRecord = appState.students.find(s => s.id === picked.id);
+        if (masterRecord) {
+          masterRecord.callCount = (masterRecord.callCount || 0) + 1;
+          if (mode === 'without') {
+            masterRecord.status = 'called';
+          }
+        }
+      });
+
+      const drawEntry = {
+        id: 'draw_' + Date.now(),
+        drawNumber,
+        timestamp,
+        batchFilter,
+        mode,
+        students: pickedStudents.map((s, idx) => ({
+          slotId: `${drawNumber}_${idx}_${s.id}`,
+          studentId: s.id,
+          sno: s.sno,
+          batch: s.batch,
+          regNo: s.regNo,
+          name: s.name,
+          returned: false
+        }))
+      };
+
+      appState.lastDraw = drawEntry;
+      appState.history.unshift(drawEntry);
+
+      playSelectionChime();
+      saveStateToStorage();
+      renderAll();
+    }
+
+    /**
+     * Marks a drawn student as Absent / Returns them to the uncalled pool
+     */
+    function returnStudentToPool(slotId) {
+      if (!appState.lastDraw) return;
+      const drawnItem = appState.lastDraw.students.find(item => item.slotId === slotId);
+      if (!drawnItem || drawnItem.returned) return;
+
+      drawnItem.returned = true;
+
+      // Also update in history log
+      const histDraw = appState.history.find(h => h.drawNumber === appState.lastDraw.drawNumber);
+      if (histDraw) {
+        const histStudent = histDraw.students.find(item => item.slotId === slotId);
+        if (histStudent) histStudent.returned = true;
+      }
+
+      // Restore student status to 'remaining' in master list
+      const masterStudent = appState.students.find(s => s.id === drawnItem.studentId);
+      if (masterStudent) {
+        masterStudent.status = 'remaining';
+        if (masterStudent.callCount > 0) masterStudent.callCount -= 1;
+      }
+
+      saveStateToStorage();
+      renderAll();
+      showToast(`${drawnItem.name} returned to uncalled pool.`, 'info');
+    }
+
+    /* =====================================================================
+     * 4. CONTROLS & ROSTER MANAGEMENT ACTIONS
+     * ===================================================================== */
+    function handleBatchChange(batchValue) {
+      appState.selectedBatch = batchValue;
+      saveStateToStorage();
+      renderAll();
+    }
+
+    function setSelectionMode(mode) {
+      appState.selectionMode = mode;
+      saveStateToStorage();
+      renderControls();
+    }
+
+    function setPickCount(n) {
+      appState.pickCount = n;
+      document.getElementById('pickCountInput').value = String(n);
+      saveStateToStorage();
+    }
+
+    function adjustPickCount(delta) {
+      const input = document.getElementById('pickCountInput');
+      const current = parseInt(input.value, 10) || 1;
+      const next = Math.max(1, Math.min(500, current + delta));
+      setPickCount(next);
+    }
+
+    function validatePickCountInput(input) {
+      const val = parseInt(input.value, 10);
+      if (!isNaN(val) && val >= 1) {
+        appState.pickCount = Math.min(500, val);
+        saveStateToStorage();
+      }
+    }
+
+    function toggleStudentStatus(studentId) {
+      const student = appState.students.find(s => s.id === studentId);
+      if (!student) return;
+      student.status = student.status === 'remaining' ? 'called' : 'remaining';
+      saveStateToStorage();
+      renderAll();
+    }
+
+    function deleteStudentRow(studentId) {
+      const student = appState.students.find(s => s.id === studentId);
+      if (!student) return;
+
+      appState.students = appState.students.filter(s => s.id !== studentId);
+
+      // If deleted student's batch no longer exists, revert selectedBatch to ALL
+      const batches = getUniqueBatches();
+      if (appState.selectedBatch !== 'ALL' && !batches.includes(appState.selectedBatch)) {
+        appState.selectedBatch = 'ALL';
+      }
+
+      saveStateToStorage();
+      renderAll();
+      showToast(`Removed ${student.name} from roster.`, 'info');
+    }
+
+    function promptResetCalledStatus() {
+      if (appState.students.length === 0) {
+        showToast('No students in roster to reset.', 'warning');
+        return;
+      }
+
+      const activeBatch = appState.selectedBatch;
+      const buttons = [
+        { label: 'Cancel', variant: 'secondary' }
+      ];
+
+      if (activeBatch !== 'ALL') {
+        buttons.push({
+          label: `Reset Batch ${activeBatch} Only`,
+          variant: 'secondary',
+          onClick: () => resetCalledForBatch(activeBatch)
+        });
+      }
+
+      buttons.push({
+        label: 'Reset All Batches',
+        variant: 'primary',
+        onClick: () => resetCalledForBatch('ALL')
+      });
+
+      showCustomModal({
+        title: 'Reset Called Status',
+        message: activeBatch !== 'ALL'
+          ? `Do you want to mark students as "Remaining" (uncalled) for Batch ${activeBatch} only, or across all batches?`
+          : 'This will reset all students back to "Remaining" (uncalled) status so they can be picked again.',
+        type: 'warning',
+        buttons
+      });
+    }
+
+    function resetCalledForBatch(batchScope) {
+      let count = 0;
+      appState.students.forEach(s => {
+        if (batchScope === 'ALL' || s.batch === batchScope) {
+          if (s.status === 'called') count++;
+          s.status = 'remaining';
+        }
+      });
+      saveStateToStorage();
+      renderAll();
+      const label = batchScope === 'ALL' ? 'all batches' : `Batch ${batchScope}`;
+      showToast(`Reset ${count} student(s) back to Remaining in ${label}.`, 'success');
+    }
+
+    function promptClearAllData() {
+      showCustomModal({
+        title: 'Clear All Data?',
+        message: 'This will permanently delete all loaded students, viva draw history, and saved session data, returning the page to a completely blank state.',
+        type: 'danger',
+        buttons: [
+          { label: 'Cancel', variant: 'secondary' },
+          {
+            label: 'Yes, Clear Everything',
+            variant: 'danger',
+            onClick: () => {
+              localStorage.removeItem(STORAGE_KEY);
+              appState = {
+                students: [],
+                selectedBatch: 'ALL',
+                selectionMode: 'without',
+                pickCount: 1,
+                lastDraw: null,
+                history: [],
+                soundEnabled: appState.soundEnabled,
+                activeTab: 'input'
+              };
+              document.getElementById('bulkPasteTextarea').value = '';
+              document.getElementById('inputSingleSno').value = '';
+              document.getElementById('inputSingleBatch').value = '';
+              document.getElementById('inputSingleRegNo').value = '';
+              document.getElementById('inputSingleName').value = '';
+              document.getElementById('rosterSearchInput').value = '';
+              document.getElementById('pickCountInput').value = '1';
+              renderAll();
+              showToast('All data cleared. Ready for a fresh session.', 'success');
+            }
+          }
+        ]
+      });
+    }
+
+    /* =====================================================================
+     * 5. UI RENDERING FUNCTIONS
+     * ===================================================================== */
+    function getUniqueBatches() {
+      const set = new Set(appState.students.map(s => s.batch).filter(Boolean));
+      return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+    }
+
+    function renderAll() {
+      renderStatsBar();
+      renderControls();
+      renderSpotlight();
+      renderRosterTable();
+      renderHistoryPanel();
+      renderTabsState();
+      renderSoundButton();
+      if (!document.getElementById('projectorOverlay').classList.contains('hidden')) {
+        renderProjectorView();
+      }
+    }
+
+    function renderStatsBar() {
+      const total = appState.students.length;
+      const batchList = appState.selectedBatch === 'ALL'
+        ? appState.students
+        : appState.students.filter(s => s.batch === appState.selectedBatch);
+
+      const poolSize = batchList.length;
+      const remaining = batchList.filter(s => s.status === 'remaining').length;
+      const called = batchList.filter(s => s.status === 'called').length;
+
+      document.getElementById('statTotalStudents').textContent = total;
+      document.getElementById('statBatchLabel').textContent =
+        appState.selectedBatch === 'ALL' ? 'Selected Pool (All)' : `Batch ${appState.selectedBatch} Pool`;
+      document.getElementById('statPoolSize').textContent = poolSize;
+      document.getElementById('statRemaining').textContent = remaining;
+      document.getElementById('statCalled').textContent = called;
+    }
+
+    function renderControls() {
+      const batches = getUniqueBatches();
+      document.getElementById('batchCountInfo').textContent = `${batches.length} batch${batches.length === 1 ? '' : 'es'}`;
+      document.getElementById('drawCounterBadge').textContent = `Draws: ${appState.history.length}`;
+
+      // Update Batch Dropdown
+      const dropdown = document.getElementById('batchSelectDropdown');
+      const totalRem = appState.students.filter(s => s.status === 'remaining').length;
+      let optionsHTML = `<option value="ALL">All Batches (${totalRem} remaining / ${appState.students.length} total)</option>`;
+
+      batches.forEach(b => {
+        const inBatch = appState.students.filter(s => s.batch === b);
+        const remInBatch = inBatch.filter(s => s.status === 'remaining').length;
+        const selectedAttr = appState.selectedBatch === b ? 'selected' : '';
+        optionsHTML += `<option value="${escapeHtml(b)}" ${selectedAttr}>Batch ${escapeHtml(b)} (${remInBatch} remaining / ${inBatch.length} total)</option>`;
+      });
+      dropdown.innerHTML = optionsHTML;
+
+      // Update Batch Pills
+      const pillsContainer = document.getElementById('batchPillsContainer');
+      if (batches.length === 0) {
+        pillsContainer.innerHTML = '';
+      } else {
+        const allActive = appState.selectedBatch === 'ALL';
+        let pillsHTML = `
+          <button
+            type="button"
+            onclick="handleBatchChange('ALL')"
+            class="px-2.5 py-1 rounded-lg text-xs font-bold transition border ${
+              allActive
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+            }"
+          >
+            All (${totalRem}/${appState.students.length})
+          </button>
+        `;
+
+        batches.forEach(b => {
+          const inBatch = appState.students.filter(s => s.batch === b);
+          const remInBatch = inBatch.filter(s => s.status === 'remaining').length;
+          const isActive = appState.selectedBatch === b;
+          pillsHTML += `
+            <button
+              type="button"
+              onclick="handleBatchChange('${escapeHtmlAttr(b)}')"
+              class="px-2.5 py-1 rounded-lg text-xs font-bold transition border ${
+                isActive
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+              }"
+            >
+              ${escapeHtml(b)} <span class="opacity-80 font-mono text-[11px]">(${remInBatch}/${inBatch.length})</span>
+            </button>
+          `;
+        });
+        pillsContainer.innerHTML = pillsHTML;
+      }
+
+      // Update Selection Mode Toggle Styling
+      const btnWithout = document.getElementById('btnModeWithout');
+      const btnWith = document.getElementById('btnModeWith');
+      const helper = document.getElementById('modeHelperText');
+
+      if (appState.selectionMode === 'without') {
+        btnWithout.className = 'py-2.5 px-3 rounded-lg text-xs font-bold transition flex flex-col items-center justify-center text-center bg-white text-indigo-700 shadow-sm border border-slate-200/80';
+        btnWith.className = 'py-2.5 px-3 rounded-lg text-xs font-bold transition flex flex-col items-center justify-center text-center text-slate-600 hover:text-slate-900';
+        helper.innerHTML = 'Selected students are marked <strong class="text-slate-700">Called</strong> and excluded from subsequent draws until reset.';
+      } else {
+        btnWith.className = 'py-2.5 px-3 rounded-lg text-xs font-bold transition flex flex-col items-center justify-center text-center bg-white text-indigo-700 shadow-sm border border-slate-200/80';
+        btnWithout.className = 'py-2.5 px-3 rounded-lg text-xs font-bold transition flex flex-col items-center justify-center text-center text-slate-600 hover:text-slate-900';
+        helper.innerHTML = 'Students stay in the active pool and <strong class="text-slate-700">can be selected again</strong> in future draws.';
+      }
+
+      document.getElementById('pickCountInput').value = String(appState.pickCount);
+    }
+
+    function renderSpotlight() {
+      const container = document.getElementById('spotlightContainer');
+      const metaBadge = document.getElementById('spotlightMetaBadge');
+      const copyAllBtn = document.getElementById('btnCopyAllDrawn');
+
+      if (!appState.lastDraw || !appState.lastDraw.students || appState.lastDraw.students.length === 0) {
+        metaBadge.classList.add('hidden');
+        copyAllBtn.classList.add('hidden');
+
+        const hasStudents = appState.students.length > 0;
+        container.innerHTML = `
+          <div class="text-center py-10 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/60">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 mx-auto flex items-center justify-center mb-3">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <h3 class="text-base font-bold text-slate-800">
+              ${hasStudents ? 'Ready for Viva Selection' : 'No Students Loaded Yet'}
+            </h3>
+            <p class="text-sm text-slate-500 max-w-md mx-auto mt-1">
+              ${
+                hasStudents
+                  ? 'Select your target Batch and click "Pick Random Student(s) for Viva" to draw candidates.'
+                  : 'Paste your student list in the "Enter / Import Students" tab below to get started.'
+              }
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      const draw = appState.lastDraw;
+      const batchText = draw.batchFilter === 'ALL' ? 'All Batches' : `Batch ${draw.batchFilter}`;
+      metaBadge.textContent = `Draw #${draw.drawNumber} • ${batchText} • ${draw.timestamp}`;
+      metaBadge.classList.remove('hidden');
+      copyAllBtn.classList.remove('hidden');
+
+      const gridCols = draw.students.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2';
+
+      let cardsHTML = `<div class="grid ${gridCols} gap-3.5">`;
+      draw.students.forEach((stu, index) => {
+        const isReturned = stu.returned;
+        const canReturn = draw.mode === 'without' && !isReturned;
+        const copyPayload = `${stu.sno}. [${stu.batch}] ${stu.regNo} - ${stu.name}`;
+
+        cardsHTML += `
+          <div class="animate-pop-in rounded-2xl border ${
+            isReturned
+              ? 'border-slate-200 bg-slate-50 opacity-75'
+              : 'border-indigo-200 bg-gradient-to-br from-white via-white to-indigo-50/40 shadow-sm'
+          } p-4 sm:p-5 flex flex-col justify-between gap-4">
+            <div class="space-y-2.5">
+              <!-- Top Badges Row -->
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="px-2.5 py-0.5 rounded-lg bg-indigo-600 text-white text-xs font-bold">
+                    Batch ${escapeHtml(stu.batch)}
+                  </span>
+                  <span class="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 font-mono text-xs font-semibold">
+                    S.No. ${escapeHtml(stu.sno)}
+                  </span>
+                </div>
+                <span class="text-xs font-bold text-slate-400 tabular-nums">#${index + 1}</span>
+              </div>
+
+              <!-- Student Name (Prominent Classroom Legibility) -->
+              <div>
+                <h3 class="text-xl sm:text-2xl font-extrabold tracking-tight ${
+                  isReturned ? 'line-through text-slate-500' : 'text-slate-900'
+                } break-words">
+                  ${escapeHtml(stu.name)}
+                </h3>
+                <p class="font-mono text-sm sm:text-base font-bold text-indigo-700 mt-1">
+                  ${escapeHtml(stu.regNo)}
+                </p>
+              </div>
+            </div>
+
+            <!-- Action Footer -->
+            <div class="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-200/70">
+              ${
+                isReturned
+                  ? `<span class="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">Returned to Pool (Absent)</span>`
+                  : canReturn
+                  ? `<button
+                      type="button"
+                      onclick="returnStudentToPool('${escapeHtmlAttr(stu.slotId)}')"
+                      class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2.5 py-1.5 rounded-lg transition"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                      </svg>
+                      <span>Absent / Return</span>
+                    </button>`
+                  : `<span class="text-[11px] font-medium text-slate-400">With Replacement</span>`
+              }
+
+              <button
+                type="button"
+                onclick="copyTextToClipboard('${escapeHtmlAttr(copyPayload)}', 'Student details copied!')"
+                class="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-indigo-700 bg-white hover:bg-indigo-50 border border-slate-200 px-2.5 py-1.5 rounded-lg transition ml-auto"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <span>Copy</span>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      cardsHTML += `</div>`;
+      container.innerHTML = cardsHTML;
+    }
+
+    function buildShufflePreviewHTML(previewList) {
+      const cols = previewList.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2';
+      let html = `<div class="grid ${cols} gap-3.5">`;
+      previewList.forEach(stu => {
+        html += `
+          <div class="rounded-2xl border-2 border-indigo-400/70 bg-indigo-50/40 p-5 animate-pulse-fast">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="px-2.5 py-0.5 rounded-lg bg-indigo-600/80 text-white text-xs font-bold">Batch ${escapeHtml(stu.batch)}</span>
+              <span class="px-2.5 py-0.5 rounded-lg bg-white text-slate-600 font-mono text-xs font-semibold">S.No. ${escapeHtml(stu.sno)}</span>
+            </div>
+            <div class="text-xl sm:text-2xl font-extrabold text-indigo-950 truncate">${escapeHtml(stu.name)}</div>
+            <div class="font-mono text-sm font-bold text-indigo-600 mt-1">${escapeHtml(stu.regNo)}</div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      return html;
+    }
+
+    function renderRosterTable() {
+      const tbody = document.getElementById('rosterTableBody');
+      const batchFilterDropdown = document.getElementById('rosterBatchFilter');
+      const currentBatchFilter = batchFilterDropdown.value || 'ALL';
+
+      // Keep Roster batch filter dropdown synced with unique batches
+      const batches = getUniqueBatches();
+      let batchOpts = `<option value="ALL">All Batches</option>`;
+      batches.forEach(b => {
+        batchOpts += `<option value="${escapeHtml(b)}" ${currentBatchFilter === b ? 'selected' : ''}>Batch ${escapeHtml(b)}</option>`;
+      });
+      batchFilterDropdown.innerHTML = batchOpts;
+
+      const searchQuery = (document.getElementById('rosterSearchInput').value || '').toLowerCase().trim();
+      const statusFilter = document.getElementById('rosterStatusFilter').value || 'ALL';
+
+      const filtered = appState.students.filter(stu => {
+        if (batchFilterDropdown.value !== 'ALL' && stu.batch !== batchFilterDropdown.value) return false;
+        if (statusFilter !== 'ALL' && stu.status !== statusFilter) return false;
+        if (searchQuery) {
+          const haystack = `${stu.sno} ${stu.batch} ${stu.regNo} ${stu.name}`.toLowerCase();
+          if (!haystack.includes(searchQuery)) return false;
+        }
+        return true;
+      });
+
+      if (appState.students.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="px-4 py-10 text-center text-sm text-slate-500">
+              No students loaded yet. Switch to <button type="button" onclick="switchMainTab('input')" class="text-indigo-600 font-bold underline">Enter / Import Students</button> to add your roster.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="px-4 py-8 text-center text-sm text-slate-500">
+              No students match the current search or filter criteria.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let rowsHTML = '';
+      filtered.forEach(stu => {
+        const isCalled = stu.status === 'called';
+        rowsHTML += `
+          <tr class="hover:bg-slate-50/80 transition ${isCalled ? 'bg-slate-50/40' : ''}">
+            <td class="px-4 py-3 font-mono text-xs font-semibold text-slate-600">${escapeHtml(stu.sno)}</td>
+            <td class="px-4 py-3">
+              <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                ${escapeHtml(stu.batch)}
+              </span>
+            </td>
+            <td class="px-4 py-3 font-mono text-xs sm:text-sm font-semibold text-slate-800">${escapeHtml(stu.regNo)}</td>
+            <td class="px-4 py-3 font-semibold text-slate-900">
+              ${escapeHtml(stu.name)}
+              ${stu.callCount > 1 ? `<span class="ml-2 px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 text-[10px] font-bold">Called ${stu.callCount}×</span>` : ''}
+            </td>
+            <td class="px-4 py-3">
+              <button
+                type="button"
+                onclick="toggleStudentStatus('${escapeHtmlAttr(stu.id)}')"
+                title="Click to toggle status"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition ${
+                  isCalled
+                    ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                    : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                }"
+              >
+                <span class="w-1.5 h-1.5 rounded-full ${isCalled ? 'bg-amber-600' : 'bg-emerald-600'}"></span>
+                <span>${isCalled ? 'Called' : 'Remaining'}</span>
+              </button>
+            </td>
+            <td class="px-4 py-3 text-right">
+              <button
+                type="button"
+                onclick="deleteStudentRow('${escapeHtmlAttr(stu.id)}')"
+                title="Remove student"
+                class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = rowsHTML;
+    }
+
+    function renderHistoryPanel() {
+      const container = document.getElementById('historyListContainer');
+
+      if (appState.history.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-10 px-4 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+            <p class="text-sm font-semibold text-slate-700">No Viva Draws Recorded Yet</p>
+            <p class="text-xs text-slate-500 mt-1">Each random pick will be logged here with timestamp, batch filter, and student details.</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      appState.history.forEach(entry => {
+        const batchLabel = entry.batchFilter === 'ALL' ? 'All Batches' : `Batch ${entry.batchFilter}`;
+        const modeLabel = entry.mode === 'without' ? 'Without Replacement' : 'With Replacement';
+
+        const studentChips = entry.students.map(s => `
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border ${
+            s.returned
+              ? 'bg-slate-100 border-slate-200 text-slate-500 line-through'
+              : 'bg-white border-slate-200 text-slate-900 shadow-2xs'
+          } text-xs">
+            <span class="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold">${escapeHtml(s.batch)}</span>
+            <span class="font-mono font-semibold text-slate-600">${escapeHtml(s.regNo)}</span>
+            <span class="font-bold">${escapeHtml(s.name)}</span>
+            ${s.returned ? '<span class="no-underline text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">Absent</span>' : ''}
+          </div>
+        `).join('');
+
+        html += `
+          <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2.5 py-0.5 rounded-lg bg-slate-900 text-white text-xs font-bold tabular-nums">
+                  Draw #${entry.drawNumber}
+                </span>
+                <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-200/60">
+                  ${escapeHtml(batchLabel)}
+                </span>
+                <span class="text-xs font-medium text-slate-500">${modeLabel}</span>
+              </div>
+              <span class="font-mono text-xs text-slate-500">${escapeHtml(entry.timestamp)}</span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              ${studentChips}
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function switchMainTab(tabName) {
+      appState.activeTab = tabName;
+      saveStateToStorage();
+      renderTabsState();
+    }
+
+    function renderTabsState() {
+      const tabs = ['input', 'roster', 'history'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+        const panel = document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1));
+        const isActive = appState.activeTab === t;
+
+        if (isActive) {
+          btn.className = 'px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-xl border-b-2 border-indigo-600 text-indigo-700 bg-white transition whitespace-nowrap flex items-center gap-2';
+          panel.classList.remove('hidden');
+        } else {
+          btn.className = 'px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-xl border-b-2 border-transparent text-slate-600 hover:text-slate-900 transition whitespace-nowrap flex items-center gap-2';
+          panel.classList.add('hidden');
+        }
+      });
+
+      document.getElementById('tabRosterBadge').textContent = appState.students.length;
+      document.getElementById('tabHistoryBadge').textContent = appState.history.length;
+    }
+
+    /* =====================================================================
+     * 6. PROJECTOR / CLASSROOM FULLSCREEN VIEW
+     * ===================================================================== */
+    function openProjectorMode() {
+      const overlay = document.getElementById('projectorOverlay');
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+      renderProjectorView();
+    }
+
+    function closeProjectorMode() {
+      const overlay = document.getElementById('projectorOverlay');
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+    }
+
+    function renderProjectorView() {
+      const batchText = appState.selectedBatch === 'ALL' ? 'All Batches' : `Batch ${appState.selectedBatch}`;
+      const remCount = getEligiblePool(appState.selectedBatch, 'without').length;
+
+      document.getElementById('projectorBatchTag').textContent = batchText;
+      document.getElementById('projectorRemainingTag').textContent = `${remCount} Uncalled Remaining`;
+
+      const area = document.getElementById('projectorContentArea');
+      if (!appState.lastDraw || appState.lastDraw.students.length === 0) {
+        area.innerHTML = `
+          <div class="text-center max-w-xl space-y-4">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Ready for Viva Draw</h2>
+            <p class="text-slate-400 text-lg">Click "Pick Next Student(s)" at the top right to display selected candidates on screen.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const draw = appState.lastDraw;
+      const cols = draw.students.length === 1 ? 'grid-cols-1 max-w-3xl' : 'grid-cols-1 md:grid-cols-2 max-w-6xl';
+
+      let html = `<div class="grid ${cols} gap-6 w-full">`;
+      draw.students.forEach((stu, idx) => {
+        html += `
+          <div class="animate-pop-in rounded-3xl bg-slate-900 border-2 ${
+            stu.returned ? 'border-slate-700 opacity-60' : 'border-indigo-500'
+          } p-8 sm:p-10 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <span class="px-4 py-1.5 rounded-xl bg-indigo-600 text-white text-base sm:text-lg font-extrabold">
+                  Batch ${escapeHtml(stu.batch)}
+                </span>
+                <span class="px-4 py-1.5 rounded-xl bg-slate-800 text-slate-300 font-mono text-base sm:text-lg font-bold">
+                  S.No. ${escapeHtml(stu.sno)}
+                </span>
+              </div>
+              <span class="text-slate-500 font-mono text-lg font-bold">Draw #${draw.drawNumber} • #${idx + 1}</span>
+            </div>
+
+            <div class="space-y-2">
+              <div class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight break-words">
+                ${escapeHtml(stu.name)}
+              </div>
+              <div class="font-mono text-2xl sm:text-3xl font-bold text-indigo-400">
+                ${escapeHtml(stu.regNo)}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      area.innerHTML = html;
+    }
+
+    function buildProjectorShuffleHTML(previewList) {
+      const cols = previewList.length === 1 ? 'grid-cols-1 max-w-3xl' : 'grid-cols-1 md:grid-cols-2 max-w-6xl';
+      let html = `<div class="grid ${cols} gap-6 w-full">`;
+      previewList.forEach(stu => {
+        html += `
+          <div class="rounded-3xl bg-slate-900/90 border-2 border-indigo-400 p-8 sm:p-10 animate-pulse-fast space-y-4">
+            <div class="flex items-center gap-3">
+              <span class="px-4 py-1.5 rounded-xl bg-indigo-600 text-white text-base font-extrabold">Batch ${escapeHtml(stu.batch)}</span>
+              <span class="px-4 py-1.5 rounded-xl bg-slate-800 text-slate-300 font-mono text-base font-bold">S.No. ${escapeHtml(stu.sno)}</span>
+            </div>
+            <div class="text-3xl sm:text-5xl font-extrabold text-indigo-200 truncate">${escapeHtml(stu.name)}</div>
+            <div class="font-mono text-2xl font-bold text-indigo-400">${escapeHtml(stu.regNo)}</div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      return html;
+    }
+
+    /* =====================================================================
+     * 7. CSV EXPORT, CLIPBOARD & WEB AUDIO CHIME
+     * ===================================================================== */
+    function exportHistoryToCSV() {
+      if (appState.history.length === 0) {
+        showToast('No call history available to export.', 'warning');
+        return;
+      }
+
+      const headers = ['Draw #', 'Timestamp', 'Batch Filter', 'Selection Mode', 'S.No.', 'Student Batch', 'Registration No.', 'Student Name', 'Attendance Status'];
+      const rows = [headers.join(',')];
+
+      // Export in chronological order (oldest to newest)
+      const chronological = [...appState.history].reverse();
+      chronological.forEach(entry => {
+        const batchFilterLabel = entry.batchFilter === 'ALL' ? 'All Batches' : entry.batchFilter;
+        const modeLabel = entry.mode === 'without' ? 'Without Replacement' : 'With Replacement';
+
+        entry.students.forEach(stu => {
+          const row = [
+            entry.drawNumber,
+            `"${entry.timestamp}"`,
+            `"${batchFilterLabel.replace(/"/g, '""')}"`,
+            `"${modeLabel}"`,
+            `"${String(stu.sno).replace(/"/g, '""')}"`,
+            `"${String(stu.batch).replace(/"/g, '""')}"`,
+            `"${String(stu.regNo).replace(/"/g, '""')}"`,
+            `"${String(stu.name).replace(/"/g, '""')}"`,
+            stu.returned ? 'Absent / Returned' : 'Present / Called'
+          ];
+          rows.push(row.join(','));
+        });
+      });
+
+      const csvContent = rows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      link.href = url;
+      link.setAttribute('download', `viva_call_log_${dateStamp}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast('Viva call log exported as CSV.', 'success');
+    }
+
+    function copyAllCurrentDrawn() {
+      if (!appState.lastDraw || !appState.lastDraw.students.length) return;
+      const lines = appState.lastDraw.students.map(
+        (s, idx) => `${idx + 1}. [Batch ${s.batch}] S.No. ${s.sno} | ${s.regNo} | ${s.name}${s.returned ? ' (Absent)' : ''}`
+      );
+      copyTextToClipboard(lines.join('\n'), 'Copied selected student(s) to clipboard!');
+    }
+
+    /**
+     * Reliable clipboard copy compatible with sandboxed iFrames
+     */
+    function copyTextToClipboard(text, successMessage = 'Copied to clipboard!') {
+      const tempTextArea = document.createElement('textarea');
+      tempTextArea.value = text;
+      tempTextArea.style.position = 'fixed';
+      tempTextArea.style.left = '-9999px';
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      try {
+        document.execCommand('copy');
+        showToast(successMessage, 'success');
+      } catch (err) {
+        showToast('Unable to copy text.', 'error');
+      }
+      document.body.removeChild(tempTextArea);
+    }
+
+    function toggleSound() {
+      appState.soundEnabled = !appState.soundEnabled;
+      saveStateToStorage();
+      renderSoundButton();
+    }
+
+    function renderSoundButton() {
+      const iconContainer = document.getElementById('soundIconContainer');
+      const label = document.getElementById('soundLabel');
+      if (appState.soundEnabled) {
+        iconContainer.innerHTML = `<svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`;
+        label.textContent = 'Sound: On';
+      } else {
+        iconContainer.innerHTML = `<svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>`;
+        label.textContent = 'Sound: Off';
+      }
+    }
+
+    /**
+     * Synthesizes a clean, subtle Web Audio chime upon draw completion (no external URLs)
+     */
+    function playSelectionChime() {
+      if (!appState.soundEnabled) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
+
+        const notes = [523.25, 659.25]; // C5 -> E5 pleasant academic chime
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+
+          gain.gain.setValueAtTime(0.001, now + idx * 0.09);
+          gain.gain.exponentialRampToValueAtTime(0.12, now + idx * 0.09 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.09 + 0.35);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + idx * 0.09);
+          osc.stop(now + idx * 0.09 + 0.36);
+        });
+      } catch (e) {
+        // Ignore audio restrictions if user hasn't interacted yet
+      }
+    }
+
+    /* =====================================================================
+     * 8. CUSTOM MODAL & TOAST SYSTEM (REPLACING alert() AND confirm())
+     * ===================================================================== */
+    function showCustomModal({ title, message, type = 'info', buttons = [] }) {
+      const backdrop = document.getElementById('customModalBackdrop');
+      const iconWrapper = document.getElementById('modalIconWrapper');
+      const titleEl = document.getElementById('modalTitle');
+      const msgEl = document.getElementById('modalMessage');
+      const btnRow = document.getElementById('modalButtonsRow');
+
+      titleEl.textContent = title;
+      msgEl.textContent = message;
+
+      if (type === 'danger') {
+        iconWrapper.className = 'w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0';
+        iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>`;
+      } else if (type === 'warning') {
+        iconWrapper.className = 'w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0';
+        iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+      } else {
+        iconWrapper.className = 'w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0';
+        iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+      }
+
+      btnRow.innerHTML = '';
+      buttons.forEach(btnCfg => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = btnCfg.label;
+
+        if (btnCfg.variant === 'danger') {
+          btn.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-600 hover:bg-rose-700 text-white transition';
+        } else if (btnCfg.variant === 'primary') {
+          btn.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition';
+        } else {
+          btn.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition';
+        }
+
+        btn.onclick = () => {
+          closeCustomModal();
+          if (typeof btnCfg.onClick === 'function') {
+            btnCfg.onClick();
+          }
+        };
+        btnRow.appendChild(btn);
+      });
+
+      backdrop.classList.remove('hidden');
+      backdrop.classList.add('flex');
+    }
+
+    function closeCustomModal() {
+      const backdrop = document.getElementById('customModalBackdrop');
+      backdrop.classList.add('hidden');
+      backdrop.classList.remove('flex');
+    }
+
+    function showToast(message, variant = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+
+      const styles = {
+        success: 'bg-slate-900 text-white border-emerald-500/40',
+        warning: 'bg-amber-950 text-amber-50 border-amber-500/40',
+        error: 'bg-rose-950 text-rose-50 border-rose-500/40',
+        info: 'bg-slate-900 text-white border-indigo-500/40'
+      };
+
+      const dotColors = {
+        success: 'bg-emerald-400',
+        warning: 'bg-amber-400',
+        error: 'bg-rose-400',
+        info: 'bg-indigo-400'
+      };
+
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg text-xs sm:text-sm font-medium animate-pop-in ${styles[variant] || styles.info}`;
+      toast.innerHTML = `
+        <span class="w-2 h-2 rounded-full shrink-0 ${dotColors[variant] || dotColors.info}"></span>
+        <span class="flex-1">${escapeHtml(message)}</span>
+      `;
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(6px)';
+        toast.style.transition = 'all 0.25s ease';
+        setTimeout(() => toast.remove(), 260);
+      }, 3200);
+    }
+
+    /* =====================================================================
+     * 9. HTML ESCAPING UTILITIES
+     * ===================================================================== */
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function escapeHtmlAttr(str) {
+      return String(str ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
